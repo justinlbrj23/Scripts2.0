@@ -1,38 +1,35 @@
-import fitz
-from docx import Document
-import os
 import requests
-from urllib.parse import urlparse
+from requests.exceptions import ConnectTimeout
+import fitz  # Import the 'fitz' module
 
-def download_pdf(url, local_path):
-    response = requests.get(url)
-    if response.status_code == 200:
-        with open(local_path, 'wb') as f:
+def download_pdf(url, filename):
+    try:
+        response = requests.get(url, timeout=10)  # Set a timeout of 10 seconds
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        with open(filename, 'wb') as f:
             f.write(response.content)
-        return local_path
-    else:
-        print(f"Error: Unable to download the PDF from '{url}'. Status code: {response.status_code}")
+        return filename
+    except ConnectTimeout:
+        print(f"Error: Connection to {url} timed out.")
+        return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}")
         return None
 
-# Input PDF file or URL
-pdf_input = "https://www2.miamidadeclerk.gov/ocs/ImgViewerWF.aspx?QS=B6%2f9EwnZlIiih%2bgqiU8rawLJW%2bj4E30XGWoN6L%2b82TlrI6ZKeBzZWEcmY6diy%2bbNvNcDVi9gRoQMfgufYMwZCEVFoj5IoptRFNP%2fx1SkmMQh8tc3zUN%2beUf8qEcBKoFwQ%2bVubIyJ5TdTYOjDh2WdRe5GivwuoM%2b407AC4fDr9HaHFltRzczAmIJEipn2YAV9EnzaAM3Ga2UKIuvtAVP1astLJBTnDma6BcNVz4zP%2flcVP2f7qBpvOIoZQUGdgbl1VqTOAqy3I1pzYfjcq5SgH8Wi5EaIZwYsIGwDeSTTtDvzmkCZyVUIJA%3d%3d"
+# Example usage
+pdf_input = "https://www2.miamidadeclerk.gov/ocs/ImgViewerWF.aspx?QS=B6%2F9EwnZlIiih%2BgqiU8rawLJW%2Bj4E30XGWoN6L%2B82TlrI6ZKeBzZWEcmY6diy%2BbNvNcDVi9gRoQMfgufYMwZCEVFoj5IoptRFNP%2Fx1SkmMQh8tc3zUN%2BeUf8qEcBKoFwQ%2BVubIyJ5TdTYOjDh2WdRe5GivwuoM%2B407AC4fDr9HaHFltRzczAmIJEipn2YAV9EnzaAM3Ga2UKIuvtAVP1astLJBTnDma6BcNVz4zP%2FlcVP2f7qBpvOIoZQUGdgbl1VqTOAqy3I1pzYfjcq5SgH8Wi5EaIZwYsIGwDeSTTtDvzmkCZyVUIJA%3D%3D"
+pdf_document = download_pdf(pdf_input, "downloaded.pdf")
 
-# Check if the input is a URL
-parsed_url = urlparse(pdf_input)
-if parsed_url.scheme in ('http', 'https'):
-    pdf_document = download_pdf(pdf_input, "downloaded.pdf")
-else:
-    pdf_document = pdf_input
-
-# Check if the file exists
-if not pdf_document or not os.path.exists(pdf_document):
-    print(f"Error: The file '{pdf_document}' does not exist.")
+if pdf_document is None:
+    print(f"Error: The file '{pdf_input}' could not be downloaded.")
 else:
     document = fitz.open(pdf_document)
 
     # Initialize an empty string to hold all the extracted text
     all_text = ""
 
+    from docx import Document
+    
     # Create a new Word document
     doc = Document()
 
@@ -46,4 +43,3 @@ else:
 
     # Save the Word document
     doc.save("extracted_text.docx")
-    print("Text extracted and saved to 'extracted_text.docx'")
