@@ -1,35 +1,30 @@
-import requests
-from requests.exceptions import ConnectTimeout
-import fitz  # Import the 'fitz' module
+import fitz
+from docx import Document
+import subprocess
+import os
 
-def download_pdf(url, filename):
+def download_pdf_with_puppeteer():
     try:
-        response = requests.get(url, timeout=10)  # Set a timeout of 10 seconds
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        with open(filename, 'wb') as f:
-            f.write(response.content)
-        return filename
-    except ConnectTimeout:
-        print(f"Error: Connection to {url} timed out.")
-        return None
-    except requests.exceptions.RequestException as e:
+        subprocess.run(["node", "download_pdf.js"], check=True)
+    except subprocess.CalledProcessError as e:
         print(f"Error: {e}")
         return None
 
-# Example usage
-pdf_input = "https://www2.miamidadeclerk.gov/ocs/ImgViewerWF.aspx?QS=B6%2F9EwnZlIiih%2BgqiU8rawLJW%2Bj4E30XGWoN6L%2B82TlrI6ZKeBzZWEcmY6diy%2BbNvNcDVi9gRoQMfgufYMwZCEVFoj5IoptRFNP%2Fx1SkmMQh8tc3zUN%2BeUf8qEcBKoFwQ%2BVubIyJ5TdTYOjDh2WdRe5GivwuoM%2B407AC4fDr9HaHFltRzczAmIJEipn2YAV9EnzaAM3Ga2UKIuvtAVP1astLJBTnDma6BcNVz4zP%2FlcVP2f7qBpvOIoZQUGdgbl1VqTOAqy3I1pzYfjcq5SgH8Wi5EaIZwYsIGwDeSTTtDvzmkCZyVUIJA%3D%3D"
-pdf_document = download_pdf(pdf_input, "downloaded.pdf")
+# Download the PDF using Puppeteer
+download_pdf_with_puppeteer()
 
-if pdf_document is None:
-    print(f"Error: The file '{pdf_input}' could not be downloaded.")
+# Path to the downloaded PDF
+download_dir = os.path.expanduser("~/Downloads")  # Adjust this path if needed
+pdf_document = os.path.join(download_dir, "downloaded.pdf")  # Update this filename if needed
+
+if not os.path.exists(pdf_document):
+    print(f"Error: The file '{pdf_document}' could not be found.")
 else:
     document = fitz.open(pdf_document)
 
     # Initialize an empty string to hold all the extracted text
     all_text = ""
 
-    from docx import Document
-    
     # Create a new Word document
     doc = Document()
 
